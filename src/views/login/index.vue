@@ -7,12 +7,13 @@
     @click-left="$router.back()"
     />
     <!-- 登录框 -->
-    <van-cell-group>
+    <van-form @submit="onLogin">
     <van-field
         v-model="user.mobile"
         icon-prefix="toutiao"
         left-icon="shouji"
         placeholder="请输入手机号"
+        :rules="fromRules.mobile"
     />
     <van-field
         v-model="user.code"
@@ -20,20 +21,22 @@
         icon-prefix="toutiao"
         left-icon="yanzhengma"
         placeholder="请输入验证码"
+        :rules="fromRules.code"
     >
     <template #button>
      <van-button class="send-btn" size="small" round>发送验证码</van-button>
     </template>
     </van-field>
-    </van-cell-group>
-    <div class="login-btn-wrap">
-        <van-button @click="onLogin" class="login-btn" type="info" block>登录</van-button>
-    </div>
+      <div class="login-btn-wrap">
+        <van-button class="login-btn" type="info" block>登录</van-button>
+      </div>
+    </van-form>
   </div>
 </template>
 
 <script>
 import { login } from '@/api/user'
+import { Toast } from 'vant'
 export default {
   name: 'LoginIndex',
   components: {},
@@ -43,6 +46,16 @@ export default {
       user: {
         mobile: '',
         code: ''
+      },
+      fromRules: {
+        mobile: [
+          { required: true, message: '请输入手机号' },
+          { pattern: /^1[3|4|5|7|8|9]\d{9}$/, message: '请输入正确的手机号' }
+        ],
+        code: [
+          { required: true, message: '请输入验证码' },
+          { pattern: /^\d{6}$/, message: '请输入正确验证码' }
+        ]
       }
     }
   },
@@ -52,11 +65,18 @@ export default {
   mounted () {},
   methods: {
     async onLogin () {
+      Toast.loading({
+        message: '登录中...',
+        forbidClick: true,
+        duration: 0
+      })
       try {
         const res = await login(this.user)
+        Toast.success('登录成功')
         console.log(res)
       } catch (err) {
         console.log(err)
+        Toast.fail('登录失败，手机号或验证码错误')
       }
     }
   }
