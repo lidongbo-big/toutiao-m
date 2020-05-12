@@ -7,12 +7,14 @@
     @click-left="$router.back()"
     />
     <!-- 登录框 -->
-    <van-form @submit="onLogin">
+    <van-form ref="login-form" @submit="onLogin" validate-first :show-error="false" :show-error-message="false" @failed='onFailed'>
     <van-field
         v-model="user.mobile"
         icon-prefix="toutiao"
         left-icon="shouji"
         placeholder="请输入手机号"
+        name="mobile"
+        center
         :rules="fromRules.mobile"
     />
     <van-field
@@ -21,10 +23,13 @@
         icon-prefix="toutiao"
         left-icon="yanzhengma"
         placeholder="请输入验证码"
+        center
+        name="code"
         :rules="fromRules.code"
     >
     <template #button>
-     <van-button class="send-btn" size="small" round>发送验证码</van-button>
+      <van-count-down v-if="isCountDownShow" :time="1000 * 60" format="ss s" @finish="isCountDownShow = false" />
+     <van-button @click.prevent="onSendSms" :loading="isSendSmsLoading" class="send-btn" size="small" round>发送验证码</van-button>
     </template>
     </van-field>
       <div class="login-btn-wrap">
@@ -35,8 +40,7 @@
 </template>
 
 <script>
-import { login } from '@/api/user'
-import { Toast } from 'vant'
+import { login, sendSms } from '@/api/user'
 export default {
   name: 'LoginIndex',
   components: {},
@@ -56,7 +60,9 @@ export default {
           { required: true, message: '请输入验证码' },
           { pattern: /^\d{6}$/, message: '请输入正确验证码' }
         ]
-      }
+      },
+      isCountDownShow: false,
+      isSendSmsLoading: false
     }
   },
   computed: {},
@@ -65,19 +71,51 @@ export default {
   mounted () {},
   methods: {
     async onLogin () {
-      Toast.loading({
+      this.$slots.loading({
         message: '登录中...',
         forbidClick: true,
         duration: 0
       })
       try {
-        const res = await login(this.user)
-        Toast.success('登录成功')
-        console.log(res)
+        const { data } = await login(this.user)
+        this.$slots.success('登录成功')
+        this.$slots.commit('setUser', data.data)
       } catch (err) {
         console.log(err)
-        Toast.fail('登录失败，手机号或验证码错误')
+        this.$slots.fail('登录失败，手机号或验证码错误')
       }
+    },
+    onFailed (error) {
+      if (error.errors[0]) {
+        this.$toast({
+          message: error.errors[0].message,
+          position: 'top'
+        })
+      }
+    },
+    async onSendSms () {
+      try {
+        const validateRet = await this.$refs['login-form'].validate('mobile')
+        console.log(validateRet)
+        this.isSendSmsLoading = true
+        const res = await sendSms(this.user.mobile)
+        console.log(res)
+        this.isCountDownShow = true
+      } catch (err) {
+        let message = ''
+        if (err && err.response && err.response.status === 429) {
+          message = '发送频繁，请稍后'
+        } else if (err.name === 'mobile') {
+          message = err.message
+        } else {
+          message = '发送失败，请重试'
+        }
+        this.$toast({
+          message,
+          position: 'top'
+        })
+      }
+      this.isSendSmsLoading = false
     }
   }
 }
