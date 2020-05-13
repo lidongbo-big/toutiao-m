@@ -71,18 +71,19 @@ export default {
   mounted () {},
   methods: {
     async onLogin () {
-      this.$slots.loading({
+      this.$toast.loading({
         message: '登录中...',
         forbidClick: true,
         duration: 0
       })
       try {
         const { data } = await login(this.user)
-        this.$slots.success('登录成功')
-        this.$slots.commit('setUser', data.data)
+        this.$toast.success('登录成功')
+        this.$store.commit('setUser', data.data)
+        this.$router.back()
       } catch (err) {
         console.log(err)
-        this.$slots.fail('登录失败，手机号或验证码错误')
+        this.$toast.fail('登录失败，手机号或验证码错误')
       }
     },
     onFailed (error) {
