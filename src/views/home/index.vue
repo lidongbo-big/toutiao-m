@@ -3,7 +3,7 @@
     <van-nav-bar class="app-nav-bar">
       <van-button class="search-btn" slot="title" icon="search" type="info" round size="small">搜索</van-button>
     </van-nav-bar>
-    <van-tabs v-model="active">
+    <van-tabs class="channel-tabs" v-model="active">
       <van-tab :title="channel.name" v-for="channel in channels" :key="channel.id"> <article-list :channel="channel" /> </van-tab>
     </van-tabs>
   </div>
@@ -55,6 +55,18 @@ export default {
     }
     .van-icon {
       font-size: 16px;
+    }
+  }
+  .channel-tabs {
+    /deep/ .van-tab {
+      border-right: 1px solid #edeff3;
+      border-bottom: 1px solid #edeff3;
+    }
+    /deep/ .van-tabs__line {
+      bottom: 20px;
+      width: 15px !important;
+      height: 3px;
+      background: #3296fa;
     }
   }
 }
